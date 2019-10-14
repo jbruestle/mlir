@@ -1400,6 +1400,11 @@ public:
     ::printSymbolReference(symbolRef, os);
   }
 
+  void printNewline(int extraIndent) override {
+    os << '\n';
+    os.indent(currentIndent + extraIndent * indentWidth);
+  }
+
   // Number of spaces used for indenting nested operations.
   const static unsigned indentWidth = 2;
 
@@ -1512,10 +1517,21 @@ void OperationPrinter::numberValueID(Value *value) {
   llvm::raw_svector_ostream specialName(specialNameBuffer);
 
   // Check to see if this value requested a special name.
-  auto *op = value->getDefiningOp();
-  if (state && op) {
-    if (auto *interface = state->getOpAsmInterface(op->getDialect()))
-      interface->getOpResultName(op, specialName);
+  if (state) {
+    // First check for OpResult values
+    if (auto *op = value->getDefiningOp()) {
+      if (auto *interface = state->getOpAsmInterface(op->getDialect()))
+        interface->getOpResultName(op, specialName);
+    }
+    // Next check for BlockArgument values
+    // Here we presume that a block belongs to the dialect of the op which
+    // holds it's region (if any)
+    if (auto* arg = mlir::dyn_cast<mlir::BlockArgument>(value)) {
+      if (auto* op = arg->getOwner()->getParentOp()) {
+        if (auto *interface = state->getOpAsmInterface(op->getDialect()))
+          interface->getBlockArgumentName(arg, specialName);
+      }
+    }
   }
 
   if (specialNameBuffer.empty()) {

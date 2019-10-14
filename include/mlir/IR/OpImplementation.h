@@ -139,6 +139,10 @@ public:
   /// special or non-printable characters in it.
   virtual void printSymbolName(StringRef symbolRef) = 0;
 
+  /// Print a newline and the current identation level, plus 'extraIndent'
+  /// additional levels, for use in multi-line op/block/region representations.
+  virtual void printNewline(int extraIndent = 0) = 0;
+
 private:
   OpAsmPrinter(const OpAsmPrinter &) = delete;
   void operator=(const OpAsmPrinter &) = delete;
@@ -594,6 +598,9 @@ public:
   /// Get a special name to use when printing the given operation. The desired
   /// name should be streamed into 'os'.
   virtual void getOpResultName(Operation *op, raw_ostream &os) const {}
+  /// Get a special name to use when printing the block arguments. The desired
+  /// name should be streamed into 'os'.
+  virtual void getBlockArgumentName(BlockArgument *arg, raw_ostream &os) const {}
 };
 
 } // end namespace mlir
